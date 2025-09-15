@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .session-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .timer-display {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #f8f9fa;
+        }
+
+        .time {
+            font-size: 64px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .progress {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .phase-info {
+            font-size: 14px;
+            color: #888;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .start-btn:hover {
+            background: #45b7aa;
+        }
+
+        .pause-btn {
+            background: #ffd166;
+            color: white;
+        }
+
+        .pause-btn:hover {
+            background: #ffc44d;
+        }
+
+        .reset-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #ff5252;
+        }
+
+        .skip-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .skip-btn:hover {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-container {
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #45b7aa);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .history {
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .history-content {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .history-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .timestamp {
+            color: #888;
+            font-weight: bold;
+        }
+
+        /* Режимы */
+        .work-mode .time {
+            color: #ff6b6b;
+        }
+
+        .work-mode .status {
+            color: #ff6b6b;
+        }
+
+        .break-mode .time {
+            color: #4ecdc4;
+        }
+
+        .break-mode .status {
+            color: #4ecdc4;
+        }
+
+        .long-break-mode .time {
+            color: #6a11cb;
+        }
+
+        .long-break-mode .status {
+            color: #6a11cb;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .time {
+                font-size: 48px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍅 POMODORO TIMER PRO</h1>
+            <div class="session-info">3 итерации → Короткий отдых → 3 итерации → Длинный отдых</div>
+        </div>
+
+        <div class="timer-display work-mode" id="timerDisplay">
+            <div class="time" id="time">25:00</div>
+            <div class="status" id="status">Готов к работе</div>
+            <div class="progress" id="progress">Итерация: 1/3 | Сессия: 1/2</div>
+            <div class="phase-info" id="phaseInfo">Следующий: Короткий отдых (15 мин)</div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-labels">
+                <span>Начало</span>
+                <span id="progressLabel">0%</span>
+                <span>Завершение</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn" id="startBtn">Старт</button>
+            <button class="pause-btn" id="pauseBtn" disabled>Пауза</button>
+            <button class="skip-btn" id="skipBtn" disabled>Пропустить отдых</button>
+            <button class="reset-btn" id="resetBtn">Сброс</button>
+        </div>
+
+        <div class="history">
+            <h3>История работы</h3>
+            <div class="history-content" id="historyContent"></div>
+        </div>
+    </div>
+
+    <script>
+        class PomodoroTimerPro {
+            constructor() {
+                this.isRunning = false;
+                this.currentIteration = 1;
+                this.currentSession = 1;
+                this.totalSessions = 2;
+                this.iterationsPerSession = 3;
+                this.workTime = 25 * 60;
+                this.shortBreakTime = 15 * 60;
+                this.longBreakTime = 30 * 60;
+                this.remainingTime = this.workTime;
+                this.isWorkTime = true;
+                this.isLongBreak = false;
+                this.timerInterval = null;
+
+                this.initializeElements();
+                this.setupEventListeners();
+                this.updateDisplay();
+            }
+
+            initializeElements() {
+                this.timeElement = document.getElementById('time');
+                this.statusElement = document.getElementById('status');
+                this.progressElement = document.getElementById('progress');
+                this.phaseInfoElement = document.getElementById('phaseInfo');
+                this.historyElement = document.getElementById('historyContent');
+                this.progressFillElement = document.getElementById('progressFill');
+                this.progressLabelElement = document.getElementById('progressLabel');
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.skipBtn = document.getElementById('skipBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startTimer());
+                this.pauseBtn.addEventListener('click', () => this.pauseTimer());
+                this.skipBtn.addEventListener('click', () => this.skipBreak());
+                this.resetBtn.addEventListener('click', () => this.resetTimer());
+            }
+
+            startTimer() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.startBtn.disabled = true;
+                    this.pauseBtn.disabled = false;
+                    this.skipBtn.disabled = !this.isWorkTime;
+
+                    if (this.currentIteration === 1 && this.currentSession === 1 && this.isWorkTime) {
+                        this.addToHistory("Начало первого рабочего цикла");
+                    }
+
+                    this.timerInterval = setInterval(() => this.tick(), 1000);
+                }
+            }
+
+            pauseTimer() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    this.startBtn.disabled = false;
+                    this.pauseBtn.disabled = true;
+                    clearInterval(this.timerInterval);
+
+                    const status = this.isWorkTime ? "пауза (работа)" : 
+                                  this.isLongBreak ? "пауза (длинный отдых)" : "пауза (короткий отдых)";
+                    this.addToHistory(`Таймер на ${status}`);
+                }
+            }
+
+            skipBreak() {
+                if (!this.isWorkTime) {
+                    this.addToHistory("Отдых пропущен");
+                    this.switchToWork();
+                }
+            }
+
+            resetTimer() {
+                this.isRunning = false;
+                this.currentIteration = 1;
+                this.currentSession = 1;
+                this.isWorkTime = true;
+                this.isLongBreak = false;
+                this.remainingTime = this.workTime;
+                
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                this.skipBtn.disabled = true;
+                clearInterval(this.timerInterval);
+                
+                this.updateDisplay();
+                this.addToHistory("Таймер сброшен");
+            }
+
+            tick() {
+                if (this.remainingTime > 0) {
+                    this.remainingTime--;
+                    this.updateDisplay();
+                } else {
+                    this.switchMode();
+                }
+            }
+
+            switchMode() {
+                if (this.isWorkTime) {
+                    // Завершилась работа
+                    this.addToHistory(`Завершена итерация ${this.currentIteration} сессии ${this.currentSession}`);
+                    
+                    if (this.currentIteration < this.iterationsPerSession) {
+                        // Короткий отдых перед следующей итерацией
+                        this.startShortBreak();
+                    } else if (this.currentSession < this.totalSessions) {
+                        // Длинный отдых перед следующей сессией
+                        this.startLongBreak();
+                    } else {
+                        // Полное завершение
+                        this.completeCycle();
+                    }
+                } else {
+                    // Завершился отдых
+                    this.switchToWork();
+                }
+            }
+
+            startShortBreak() {
+                this.isWorkTime = false;
+                this.isLongBreak = false;
+                this.remainingTime = this.shortBreakTime;
+                
+                this.addToHistory("Начало короткого отдыха (15 мин)");
+                this.playSound();
+                this.showNotification("Короткий перерыв!", "Отдохните 15 минут!");
+            }
+
+            startLongBreak() {
+                this.isWorkTime = false;
+                this.isLongBreak = true;
+                this.remainingTime = this.longBreakTime;
+                
+                this.addToHistory("Начало длинного отдыха (30 мин)");
+                this.playSound();
+                this.showNotification("Длинный перерыв!", "Отдохните 30 минут!");
+            }
+
+            switchToWork() {
+                this.isWorkTime = true;
+                
+                if (this.isLongBreak) {
+                    // После длинного отдыха начинаем новую сессию
+                    this.currentSession++;
+                    this.currentIteration = 1;
+                    this.isLongBreak = false;
+                    this.addToHistory(`Начало сессии ${this.currentSession}`);
+                } else {
+                    // После короткого отдыха продолжаем текущую сессию
+                    this.currentIteration++;
+                }
+                
+                this.remainingTime = this.workTime;
+                this.addToHistory(`Начало работы: итерация ${this.currentIteration}`);
+                this.playSound();
+                this.showNotification("Время работать!", "Сосредоточьтесь на задаче!");
+                
+                this.updateDisplay();
+            }
+
+            completeCycle() {
+                this.addToHistory("🎉 Весь рабочий цикл завершен!");
+                this.playSound();
+                this.showNotification("Поздравляем!", "Весь рабочий цикл завершен! Вы молодец!");
+                this.resetTimer();
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.remainingTime / 60);
+                const seconds = this.remainingTime % 60;
+                this.timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                // Обновление статуса и стилей
+                if (this.isWorkTime) {
+                    this.statusElement.textContent = `Работа - Итерация ${this.currentIteration}`;
+                    this.timerDisplay.className = 'timer-display work-mode';
+                    this.skipBtn.disabled = true;
+                } else if (this.isLongBreak) {
+                    this.statusElement.textContent = "Длинный отдых";
+                    this.timerDisplay.className = 'timer-display long-break-mode';
+                    this.skipBtn.disabled = false;
+                } else {
+                    this.statusElement.textContent = "Короткий отдых";
+                    this.timerDisplay.className = 'timer-display break-mode';
+                    this.skipBtn.disabled = false;
+                }
+
+                // Обновление информации о прогрессе
+                this.progressElement.textContent = 
+                    `Итерация: ${this.currentIteration}/${this.iterationsPerSession} | Сессия: ${this.currentSession}/${this.totalSessions}`;
+
+                // Обновление информации о следующей фазе
+                if (this.isWorkTime) {
+                    if (this.currentIteration < this.iterationsPerSession) {
+                        this.phaseInfoElement.textContent = "Следующий: Короткий отдых (15 мин)";
+                    } else if (this.currentSession < this.totalSessions) {
+                        this.phaseInfoElement.textContent = "Следующий: Длинный отдых (30 мин)";
+                    } else {
+                        this.phaseInfoElement.textContent = "Последняя итерация цикла";
+                    }
+                } else {
+                    this.phaseInfoElement.textContent = "Следующий: Работа (25 мин)";
+                }
+
+                // Обновление прогресс-бара
+                this.updateProgressBar();
+            }
+
+            updateProgressBar() {
+                let progress = 0;
+                const totalIterations = this.totalSessions * this.iterationsPerSession;
+                const completedIterations = (this.currentSession - 1) * this.iterationsPerSession + (this.currentIteration - 1);
+                
+                if (this.isWorkTime) {
+                    const iterationProgress = (this.workTime - this.remainingTime) / this.workTime;
+                    progress = (completedIterations + iterationProgress) / totalIterations;
+                } else {
+                    progress = completedIterations / totalIterations;
+                }
+
+                const progressPercent = Math.round(progress * 100);
+                this.progressFillElement.style.width = `${progressPercent}%`;
+                this.progressLabelElement.textContent = `${progressPercent}%`;
+            }
+
+            addToHistory(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = document.createElement('div');
+                entry.className = 'history-entry';
+                entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+                this.historyElement.appendChild(entry);
+                this.historyElement.scrollTop = this.historyElement.scrollHeight;
+            }
+
+            playSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.connect(audioContext.destination);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (e) {
+                    console.log("Звук не поддерживается");
+                }
+            }
+
+            showNotification(title, message) {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(title, { body: message });
+                }
+
+                // Всегда показываем alert для важных уведомлений
+                alert(`${title}\n${message}`);
+            }
+        }
+
+        // Запрос разрешения на уведомления
+        document.addEventListener('DOMContentLoaded', function() {
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+            
+            // Инициализация улучшенного таймера
+            new PomodoroTimerPro();
+        });
+    </script>
+</body>
+</html>
